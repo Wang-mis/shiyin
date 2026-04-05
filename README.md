@@ -16,27 +16,35 @@
 
 ![example](example.jpg)
 
-```
-              静  夜  思
-           ────────────
-               李  白
-            唐代 · 五言绝句
-
-        床前明月光，疑是地上霜。
-        举头望明月，低头思故乡。
-```
-
 ## 安装
 
-**从源码构建：**
+### 下载预编译二进制
+
+前往 [Releases](https://github.com/Wang-mis/shiyin/releases) 下载对应平台的文件：
+
+| 平台 | 文件 |
+|------|------|
+| Windows (x64) | `shiyin-windows-amd64.exe` |
+| Linux (x64) | `shiyin-linux-amd64` |
+| Linux (ARM64) | `shiyin-linux-arm64` |
+| macOS (Intel) | `shiyin-darwin-amd64` |
+| macOS (Apple Silicon) | `shiyin-darwin-arm64` |
+
+Linux / macOS 下载后需添加执行权限：
+
+```bash
+chmod +x shiyin-*
+```
+
+### 从源码构建
+
+需要 Go 1.21 或更高版本。
 
 ```bash
 git clone https://github.com/Wang-mis/shiyin.git
 cd shiyin
 go build -o shiyin ./cmd/
 ```
-
-需要 Go 1.21 或更高版本。
 
 ## 用法
 
