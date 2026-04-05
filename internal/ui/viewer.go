@@ -94,15 +94,8 @@ func (m ViewerModel) View() string {
 
 	// Window too small
 	if width < minWidth || height < minHeight {
-		center := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
-		msg := center.Render(tooSmallStyle.Render("窗口太小"))
-		topPad := (height - 1) / 2
-		var sb strings.Builder
-		for i := 0; i < topPad; i++ {
-			sb.WriteByte('\n')
-		}
-		sb.WriteString(msg)
-		return sb.String()
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center,
+			tooSmallStyle.Render("窗口太小"))
 	}
 
 	poem := m.poems[m.index]
