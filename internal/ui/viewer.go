@@ -148,23 +148,44 @@ func (m ViewerModel) View() string {
 	}
 	sb.WriteString(content)
 
-	// Help bar (shown only when h/? is pressed)
+	// Fill remaining lines so Bubble Tea clears any leftover content on resize/toggle
+	usedLines := topPad + contentHeight
+	remaining := height - usedLines - 1
+	if remaining < 0 {
+		remaining = 0
+	}
+
 	if m.showHelp {
 		hint := fmt.Sprintf("← 上首   → 下首   r 随机   Esc 重选集合   h 关闭帮助   q 退出   %d / %d",
 			m.index+1, len(m.poems))
-		// fill rest of height
-		usedLines := topPad + contentHeight
-		remaining := height - usedLines
-		if remaining < 0 {
-			remaining = 0
+		// Truncate hint to one line so it never wraps
+		if lipgloss.Width(hint) > width {
+			hint = truncateToWidth(hint, width)
 		}
 		for i := 0; i < remaining; i++ {
 			sb.WriteByte('\n')
 		}
 		sb.WriteString(hintStyle.Render(hint))
+	} else {
+		for i := 0; i < remaining; i++ {
+			sb.WriteByte('\n')
+		}
 	}
 
 	return sb.String()
+}
+
+// truncateToWidth truncates s so its display width does not exceed maxW.
+func truncateToWidth(s string, maxW int) string {
+	w := 0
+	for i, r := range s {
+		rw := lipgloss.Width(string(r))
+		if w+rw > maxW {
+			return s[:i]
+		}
+		w += rw
+	}
+	return s
 }
 
 // longestLineWidth returns the display width of the widest paragraph line.
