@@ -29,7 +29,13 @@ var (
 
 	hintStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#555555"))
+
+	tooSmallStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#555555"))
 )
+
+const minWidth = 20
+const minHeight = 8
 
 type ViewerModel struct {
 	poems      []data.Poem
@@ -85,6 +91,19 @@ func (m ViewerModel) Update(msg tea.Msg) (ViewerModel, tea.Cmd) {
 func (m ViewerModel) View() string {
 	width := m.width
 	height := m.height
+
+	// Window too small
+	if width < minWidth || height < minHeight {
+		center := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
+		msg := center.Render(tooSmallStyle.Render("窗口太小"))
+		topPad := (height - 1) / 2
+		var sb strings.Builder
+		for i := 0; i < topPad; i++ {
+			sb.WriteByte('\n')
+		}
+		sb.WriteString(msg)
+		return sb.String()
+	}
 
 	poem := m.poems[m.index]
 	center := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
@@ -142,9 +161,9 @@ func (m ViewerModel) View() string {
 			m.index+1, len(m.poems))
 		// fill rest of height
 		usedLines := topPad + contentHeight
-		remaining := height - usedLines - 2
-		if remaining < 1 {
-			remaining = 1
+		remaining := height - usedLines
+		if remaining < 0 {
+			remaining = 0
 		}
 		for i := 0; i < remaining; i++ {
 			sb.WriteByte('\n')
