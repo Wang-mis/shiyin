@@ -31,7 +31,7 @@ var (
 			Foreground(lipgloss.Color("#DADADA"))
 
 	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#555555"))
+			Foreground(lipgloss.Color("#3A3A3A"))
 
 	tooSmallStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#555555"))
@@ -157,7 +157,7 @@ func (m ViewerModel) View() string {
 
 	// Fill remaining lines so Bubble Tea clears any leftover content on resize/toggle
 	usedLines := topPad + contentHeight
-	remaining := height - usedLines - 1
+	remaining := height - usedLines - 2
 	if remaining < 0 {
 		remaining = 0
 	}
