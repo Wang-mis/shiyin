@@ -21,17 +21,19 @@ type AppModel struct {
 
 // NewAppModel creates the app starting at the collection selector.
 func NewAppModel() AppModel {
+	favs, _ := data.LoadFavorites()
 	return AppModel{
 		state:    stateSelector,
-		selector: NewSelectorModel(),
+		selector: NewSelectorModel(len(favs)),
 	}
 }
 
 // NewAppModelWithCollection creates the app starting directly in viewer mode.
 func NewAppModelWithCollection(key, name string, poems []data.Poem) AppModel {
+	favs, _ := data.LoadFavorites()
 	return AppModel{
 		state:    stateViewer,
-		selector: NewSelectorModel(),
+		selector: NewSelectorModel(len(favs)),
 		viewer:   NewViewerModel(poems, name),
 	}
 }
@@ -49,9 +51,10 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "esc":
 			if m.state == stateViewer {
-				// Return to selector
+				// Return to selector, refresh fav count
+				favs, _ := data.LoadFavorites()
 				m.state = stateSelector
-				m.selector = NewSelectorModel()
+				m.selector = NewSelectorModel(len(favs))
 				return m, nil
 			}
 		}
@@ -69,7 +72,13 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Check if user made a selection
 		if key := m.selector.ChosenKey(); key != "" {
-			poems, err := data.Load(key)
+			var poems []data.Poem
+			var err error
+			if key == "fav" {
+				poems, err = data.LoadFavorites()
+			} else {
+				poems, err = data.Load(key)
+			}
 			if err == nil && len(poems) > 0 {
 				m.viewer = NewViewerModel(poems, m.selector.ChosenName())
 				m.state = stateViewer

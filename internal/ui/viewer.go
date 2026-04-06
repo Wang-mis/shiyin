@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -33,6 +34,9 @@ var (
 	hintStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#3A3A3A"))
 
+	toastStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888"))
+
 	tooSmallStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#555555"))
 )
@@ -40,13 +44,24 @@ var (
 const minWidth = 20
 const minHeight = 8
 
+type tickMsg struct{}
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
+		return tickMsg{}
+	})
+}
+
 type ViewerModel struct {
 	poems      []data.Poem
 	index      int
 	width      int
 	height     int
 	showHelp   bool
-	collection string // display name
+	collection string
+	favorites  []data.Poem
+	toastMsg   string
+	toastTick  int
 }
 
 func NewViewerModel(poems []data.Poem, collection string) ViewerModel {
@@ -57,12 +72,14 @@ func NewViewerModel(poems []data.Poem, collection string) ViewerModel {
 	if h == 0 {
 		h = 24
 	}
+	favs, _ := data.LoadFavorites()
 	return ViewerModel{
 		poems:      poems,
 		index:      0,
 		width:      w,
 		height:     h,
 		collection: collection,
+		favorites:  favs,
 	}
 }
 
@@ -76,6 +93,15 @@ func (m ViewerModel) Update(msg tea.Msg) (ViewerModel, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
+	case tickMsg:
+		if m.toastTick > 0 {
+			m.toastTick--
+			if m.toastTick > 0 {
+				return m, tickCmd()
+			}
+			m.toastMsg = ""
+		}
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "right", "l", " ", "n":
@@ -84,6 +110,18 @@ func (m ViewerModel) Update(msg tea.Msg) (ViewerModel, tea.Cmd) {
 			m.index = (m.index - 1 + len(m.poems)) % len(m.poems)
 		case "r":
 			m.index = rand.Intn(len(m.poems))
+		case "f":
+			poem := m.poems[m.index]
+			newFavs, added := data.ToggleFavorite(m.favorites, poem)
+			m.favorites = newFavs
+			_ = data.SaveFavorites(newFavs)
+			if added {
+				m.toastMsg = "已收藏"
+			} else {
+				m.toastMsg = "已取消收藏"
+			}
+			m.toastTick = 40
+			return m, tickCmd()
 		case "o":
 			poem := m.poems[m.index]
 			u := "https://www.guwendao.net/search.aspx?value=" + url.QueryEscape(poem.Title)
@@ -107,6 +145,18 @@ func (m ViewerModel) View() string {
 
 	poem := m.poems[m.index]
 	center := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
+
+	// Toast — rendered in top-right corner (replaces first line)
+	var toastLine string
+	if m.toastMsg != "" {
+		toast := toastStyle.Render(m.toastMsg)
+		toastW := lipgloss.Width(toast)
+		pad := width - toastW
+		if pad < 0 {
+			pad = 0
+		}
+		toastLine = strings.Repeat(" ", pad) + toast
+	}
 
 	// Title
 	titleLine := center.Render(titleStyle.Render(poem.Title))
@@ -142,28 +192,41 @@ func (m ViewerModel) View() string {
 
 	content := titleLine + "\n" + divider + "\n" + metaLine + "\n\n" + body
 
-	// Vertical centering
+	// Vertical centering — reserve top line for toast if active
 	contentHeight := strings.Count(content, "\n") + 1
-	topPad := (height - contentHeight) / 2
+	availHeight := height
+	if toastLine != "" {
+		availHeight--
+	}
+	topPad := (availHeight - contentHeight) / 2
 	if topPad < 0 {
 		topPad = 0
 	}
 
 	var sb strings.Builder
-	for i := 0; i < topPad; i++ {
-		sb.WriteByte('\n')
+
+	// Write toast line first (or blank line to preserve layout)
+	if toastLine != "" {
+		sb.WriteString(toastLine + "\n")
+		for i := 0; i < topPad; i++ {
+			sb.WriteByte('\n')
+		}
+	} else {
+		for i := 0; i < topPad+1; i++ {
+			sb.WriteByte('\n')
+		}
 	}
 	sb.WriteString(content)
 
 	// Fill remaining lines so Bubble Tea clears any leftover content on resize/toggle
-	usedLines := topPad + contentHeight
+	usedLines := topPad + 1 + contentHeight
 	remaining := height - usedLines - 1
 	if remaining < 0 {
 		remaining = 0
 	}
 
 	if m.showHelp {
-		keys := "← →  翻页    r  随机    o  详情    Esc  返回    q  退出"
+		keys := "← →  翻页    r  随机    f  收藏    o  详情    Esc  返回    q  退出"
 		page := fmt.Sprintf("%d / %d", m.index+1, len(m.poems))
 		pageW := lipgloss.Width(page)
 		keysW := lipgloss.Width(keys)
@@ -188,7 +251,6 @@ func (m ViewerModel) View() string {
 	return sb.String()
 }
 
-// truncateToWidth truncates s so its display width does not exceed maxW.
 func openInBrowser(u string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {

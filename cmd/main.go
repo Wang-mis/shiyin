@@ -19,6 +19,7 @@ const usage = `shiyin — 终端诗词阅读器
   tang      唐诗三百首
   ci        宋词三百首
   all       全部
+  fav       收藏夹
 
 选项:
   -s        乱序 (随机打乱诗词顺序)
@@ -26,6 +27,7 @@ const usage = `shiyin — 终端诗词阅读器
 示例:
   shiyin              启动集合选择器
   shiyin tang         直接打开唐诗三百首
+  shiyin fav          直接打开收藏夹
   shiyin all -s       全部诗词，乱序
 `
 
@@ -46,6 +48,8 @@ func main() {
 			collection = "ci300"
 		case "all":
 			collection = "all"
+		case "fav":
+			collection = "fav"
 		default:
 			fmt.Fprintf(os.Stderr, "未知参数: %q\n\n%s", arg, usage)
 			os.Exit(1)
@@ -82,6 +86,10 @@ func loadCollection(key string) (name string, poems []data.Poem, err error) {
 		name = "宋词三百首"
 	case "all":
 		name = "全部"
+	case "fav":
+		name = "收藏夹"
+		poems, err = data.LoadFavorites()
+		return
 	}
 	poems, err = data.Load(key)
 	return

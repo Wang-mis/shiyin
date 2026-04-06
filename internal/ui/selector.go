@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
@@ -25,11 +27,14 @@ type SelectorModel struct {
 	height int
 }
 
-func NewSelectorModel() SelectorModel {
+func NewSelectorModel(favCount int) SelectorModel {
 	items := []list.Item{
 		collectionItem{key: "tang300", title: "唐诗三百首"},
 		collectionItem{key: "ci300", title: "宋词三百首"},
 		collectionItem{key: "all", title: "全部 (唐诗 + 宋词)"},
+	}
+	if favCount > 0 {
+		items = append(items, collectionItem{key: "fav", title: fmt.Sprintf("收藏夹 (%d)", favCount)})
 	}
 
 	delegate := list.NewDefaultDelegate()
@@ -97,6 +102,8 @@ func (m SelectorModel) ChosenName() string {
 		return data.AvailableCollections[1].Name
 	case "all":
 		return "全部"
+	case "fav":
+		return "收藏夹"
 	}
 	return ""
 }
