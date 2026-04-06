@@ -157,13 +157,13 @@ func (m ViewerModel) View() string {
 
 	// Fill remaining lines so Bubble Tea clears any leftover content on resize/toggle
 	usedLines := topPad + contentHeight
-	remaining := height - usedLines - 2
+	remaining := height - usedLines - 1
 	if remaining < 0 {
 		remaining = 0
 	}
 
 	if m.showHelp {
-		hint := fmt.Sprintf("← 上首   → 下首   r 随机   o 打开详情   Esc 重选集合   h 关闭帮助   q 退出   %d / %d",
+		hint := fmt.Sprintf("← →  翻页    r  随机    o  详情    Esc  返回    q  退出    %d / %d",
 			m.index+1, len(m.poems))
 		// Truncate hint to one line so it never wraps
 		if lipgloss.Width(hint) > width {
@@ -172,7 +172,7 @@ func (m ViewerModel) View() string {
 		for i := 0; i < remaining; i++ {
 			sb.WriteByte('\n')
 		}
-		sb.WriteString(hintStyle.Render(hint))
+		sb.WriteString("\n" + hintStyle.Render(hint))
 	} else {
 		for i := 0; i < remaining; i++ {
 			sb.WriteByte('\n')
