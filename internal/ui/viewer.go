@@ -3,7 +3,10 @@ package ui
 import (
 	"fmt"
 	"math/rand"
+	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -81,6 +84,10 @@ func (m ViewerModel) Update(msg tea.Msg) (ViewerModel, tea.Cmd) {
 			m.index = (m.index - 1 + len(m.poems)) % len(m.poems)
 		case "r":
 			m.index = rand.Intn(len(m.poems))
+		case "o":
+			poem := m.poems[m.index]
+			u := "https://www.guwendao.net/search.aspx?value=" + url.QueryEscape(poem.Title)
+			openInBrowser(u)
 		case "h", "?":
 			m.showHelp = !m.showHelp
 		}
@@ -156,7 +163,7 @@ func (m ViewerModel) View() string {
 	}
 
 	if m.showHelp {
-		hint := fmt.Sprintf("← 上首   → 下首   r 随机   Esc 重选集合   h 关闭帮助   q 退出   %d / %d",
+		hint := fmt.Sprintf("← 上首   → 下首   r 随机   o 打开详情   Esc 重选集合   h 关闭帮助   q 退出   %d / %d",
 			m.index+1, len(m.poems))
 		// Truncate hint to one line so it never wraps
 		if lipgloss.Width(hint) > width {
@@ -173,6 +180,20 @@ func (m ViewerModel) View() string {
 	}
 
 	return sb.String()
+}
+
+// truncateToWidth truncates s so its display width does not exceed maxW.
+func openInBrowser(u string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", u)
+	case "darwin":
+		cmd = exec.Command("open", u)
+	default:
+		cmd = exec.Command("xdg-open", u)
+	}
+	_ = cmd.Start()
 }
 
 // truncateToWidth truncates s so its display width does not exceed maxW.
