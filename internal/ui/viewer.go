@@ -163,9 +163,15 @@ func (m ViewerModel) View() string {
 	}
 
 	if m.showHelp {
-		hint := fmt.Sprintf("← →  翻页    r  随机    o  详情    Esc  返回    q  退出    %d / %d",
-			m.index+1, len(m.poems))
-		// Truncate hint to one line so it never wraps
+		keys := "← →  翻页    r  随机    o  详情    Esc  返回    q  退出"
+		page := fmt.Sprintf("%d / %d", m.index+1, len(m.poems))
+		pageW := lipgloss.Width(page)
+		keysW := lipgloss.Width(keys)
+		gap := width - keysW - pageW
+		if gap < 2 {
+			gap = 2
+		}
+		hint := keys + strings.Repeat(" ", gap) + page
 		if lipgloss.Width(hint) > width {
 			hint = truncateToWidth(hint, width)
 		}
