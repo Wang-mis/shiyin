@@ -192,34 +192,29 @@ func (m ViewerModel) View() string {
 
 	content := titleLine + "\n" + divider + "\n" + metaLine + "\n\n" + body
 
-	// Vertical centering — reserve top line for toast if active
+	// Vertical centering — first line is always reserved for toast (blank when no toast)
+	// so available height for centering is height-1
 	contentHeight := strings.Count(content, "\n") + 1
-	availHeight := height
-	if toastLine != "" {
-		availHeight--
-	}
-	topPad := (availHeight - contentHeight) / 2
+	topPad := (height - 1 - contentHeight) / 2
 	if topPad < 0 {
 		topPad = 0
 	}
 
 	var sb strings.Builder
 
-	// Write toast line first (or blank line to preserve layout)
+	// First line: toast (right-aligned) or blank
 	if toastLine != "" {
 		sb.WriteString(toastLine + "\n")
-		for i := 0; i < topPad; i++ {
-			sb.WriteByte('\n')
-		}
 	} else {
-		for i := 0; i < topPad+1; i++ {
-			sb.WriteByte('\n')
-		}
+		sb.WriteByte('\n')
+	}
+	for i := 0; i < topPad; i++ {
+		sb.WriteByte('\n')
 	}
 	sb.WriteString(content)
 
-	// Fill remaining lines so Bubble Tea clears any leftover content on resize/toggle
-	usedLines := topPad + 1 + contentHeight
+	// Fill remaining lines
+	usedLines := 1 + topPad + contentHeight
 	remaining := height - usedLines - 1
 	if remaining < 0 {
 		remaining = 0
