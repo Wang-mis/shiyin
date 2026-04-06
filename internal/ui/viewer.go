@@ -103,6 +103,9 @@ func (m ViewerModel) Update(msg tea.Msg) (ViewerModel, tea.Cmd) {
 		}
 
 	case tea.KeyMsg:
+		if len(m.poems) == 0 {
+			break
+		}
 		switch msg.String() {
 		case "right", "l", " ", "n":
 			m.index = (m.index + 1) % len(m.poems)
@@ -143,6 +146,11 @@ func (m ViewerModel) View() string {
 			tooSmallStyle.Render("窗口太小"))
 	}
 
+	// Empty collection (e.g. empty favorites)
+	if len(m.poems) == 0 {
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center,
+			tooSmallStyle.Render("收藏夹是空的"))
+	}
 	poem := m.poems[m.index]
 	center := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
 
